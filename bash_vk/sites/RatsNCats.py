@@ -2,29 +2,32 @@
 # -*- coding: UTF-8 -*-
 
 from .. import read
+# from bash_vk.vk import Vk
+from bash_vk.base import Base
 
 class RatsNCats (read.Read):
-	tag_name = u"RatsNCats"
-	postPause = 0
+	def	__init__(self):
+		read.Read.__init__(self)
+		self.tag_name = u"RatsNCats"
+		self.from_group = 1
+		self.post_type = "image"
 
-	def read(self, time):
-		if not self.__checkTime(time):
-			return {}
+	def getPosts(self):
+		return self.__postCheck(self.__read())
 
+	def __preCheck(self):
+		pass
+
+	def __read(self):
 		q_id = []
 		q_text = []
 		q_data = {}
-		tree = self.__get('http://acomics.ru/~rats-n-cats')
+		tree = self._get('http://acomics.ru/~rats-n-cats')
 
-		quotes = tree.xpath('.//div[@class = "quote"]')
-		for block in quotes:
-			q_id.append(block.xpath("substring-after(div[@class='actions']/span[@class='id'], '#')"))
-			q_text.append('\n'.join(block.xpath("div[@class='text']/text()")))
+		self.image = "https://acomics.ru/" + tree.xpath("//img[@id='mainImage']/@src")[0]
+		site, slash, filename = self.image.rpartition('/')
 
-		for i, q in zip(q_id, q_text):
-			q_data[i] = self.tag(q)
+		return {filename: self.tag('')}
 
-		return q_data
-
-	def __checkTime(self, lastPost):
-		return True
+	def __postCheck(self, quotes):
+		return Base.checkPostsList(quotes, self.__class__.__name__)

@@ -2,20 +2,30 @@
 # -*- coding: UTF-8 -*-
 
 from .. import read
+# from bash_vk.vk import Vk
+from bash_vk.base import Base
 
-class Bash_best (read.Read):
-	tag_name = u"Лучшее"
+class Bash_best(read.Read):
+	def	__init__(self):
+		read.Read.__init__(self)
+		self.tag_name = u"ЛучшееБездны"
+		self.from_group = 0
+		self.post_type = "quote"
 
-	def read(self, time):
-		if not self.__checkTime(time):
-			return {}
+	def getPosts(self):
+		return self.__postCheck(self.__read())
 
+	def __preCheck(self):
+		pass
+
+	def __read(self):
 		q_id = []
 		q_text = []
 		q_data = {}
-		tree = self._get('http://bash.im/abyssbest')
 
+		tree = self._get('http://bash.im/abyssbest')
 		quotes = tree.xpath('.//div[@class = "quote"]')
+
 		for block in quotes:
 			q_id.append(block.xpath("substring-after(div[@class='actions']/span[@class='id'], '#')"))
 			q_text.append('\n'.join(block.xpath("div[@class='text']/text()")))
@@ -25,5 +35,5 @@ class Bash_best (read.Read):
 
 		return q_data
 
-	def __checkTime(self, lastPost):
-		return True
+	def __postCheck(self, quotes):
+		return Base.checkPostsList(quotes, self.__class__.__name__)

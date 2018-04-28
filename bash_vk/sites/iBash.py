@@ -4,15 +4,30 @@
 import datetime
 
 from .. import read
+# from bash_vk.vk import Vk
+from bash_vk.base import Base
 
 class iBash (read.Read):
-	tag_name = u"ibash"
-	postPause = 60
+	def	__init__(self):
+		read.Read.__init__(self)
+		self.tag_name = u"ibash"
+		self.from_group = 1
+		self.post_type = "quote"
+		self.post_pause = 6
 
-	def read(self, time):
-		if not self.__checkTime(time):
+	def getPosts(self):
+		if not self.__preCheck(Base.getLastPost4Name(self.__class__.__name__)):
 			return {}
 
+		return self.__postCheck(self.__read())
+
+
+	def __preCheck(self, lastPost):
+		if (datetime.datetime.now() - datetime.datetime.strptime(lastPost, "%Y-%m-%d %H:%M:%S")) > datetime.timedelta(hours = self.post_pause):
+			return True
+		return False
+
+	def __read(self):
 		q_id = []
 		q_text = []
 		q_data = {}
@@ -28,7 +43,5 @@ class iBash (read.Read):
 
 		return q_data
 
-	def __checkTime(self, lastPost):
-		if (datetime.datetime.now() - lastPost) > datetime.timedelta(minutes = self.postPause):
-			return True
-		return False
+	def __postCheck(self, quotes):
+		return Base.checkPostsList(quotes, self.__class__.__name__)

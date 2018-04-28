@@ -4,40 +4,46 @@
 import os
 import shutil
 import random
-import ConfigParser
+import datetime
 
 from .. import read
-from .. import vk
-
+from bash_vk.vk import Vk
+# from bash_vk.base import Base
 
 class Cats(read.Read):
-	tag_name = u"простокотик"
 
-	def read(self, time):
-		if not self.__checkTime(time):
+	def	__init__(self):
+		read.Read.__init__(self)
+		self.tag_name = u"простокотик"
+		self.from_group = 1
+		self.post_type = "image"
+
+	def getPosts(self):
+		if not self.__preCheck():
 			return {}
 
+		read = self.__read()
+
+		if False != read:
+			return {read: self.tag("")}
+		return {}
+
+	def __preCheck(self):
+		for post in Vk.getWall(15, 'owner'):
+			if post["attachments"]:
+				return False
+		return True
+
+	def __read(self):
 		files = os.listdir("./cats")
 		if files != []:
 			random.shuffle(files)
 			randomImg = files[0]
 			shutil.move(r'./cats/' + randomImg, r'./upload')
 			self.image = randomImg
+			return randomImg
 
-			return {randomImg: self.tag("")}
+		return False
 
-		return {}
-
-	def __checkTime(self, lastPost):
-		cfg = ConfigParser.ConfigParser()
-		cfg.read('bash.ini')
-		v = vk.Vk(cfg.get('VK-API', 'token'), cfg.get('VK-API', 'group_id'))
-
-		try:
-			for post in v.getWall(10, 'owner')['items']:
-				if u"простокотик" in post['text'] or u"пятничныйкотик" in post['text']:
-					return False
-		except KeyError:
-			return False
-
-		return True
+	def __postCheck(self):
+		pass

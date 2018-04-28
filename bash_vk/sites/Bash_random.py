@@ -5,21 +5,38 @@ import random
 import datetime
 
 from .. import read
+# from bash_vk.vk import Vk
+from bash_vk.base import Base
 
-class Bash_random (read.Read):
-	tag_name = u"Случайные"
-	postPause = 60
+class Bash_random(read.Read):
 
-	def read(self, time):
-		if not self.__checkTime(time):
+	def	__init__(self):
+		read.Read.__init__(self)
+		self.tag_name = u"Случайные"
+		self.from_group = 1
+		self.post_type = "quote"
+		self.post_pause = 60
+
+	def getPosts(self):
+		if not self.__preCheck(Base.getLastPost4Type(self.post_type)):
 			return {}
 
+		return self.__postCheck(self.__read())
+
+
+	def __preCheck(self, lastPost):
+		if (datetime.datetime.now() - datetime.datetime.strptime(lastPost, "%Y-%m-%d %H:%M:%S")) > datetime.timedelta(minutes = self.post_pause):
+			return True
+		return False
+
+	def __read(self):
 		q_id = []
 		q_text = []
 		q_data = {}
-		tree = self.__get('http://bash.im/random')
 
+		tree = self._get('http://bash.im/random')
 		quotes = tree.xpath('.//div[@class = "quote"]')
+
 		for block in quotes:
 			if (block.xpath("substring-after(div[@class='actions']/a[@class='id'], '#')") != ""):
 				q_date = block.xpath("substring-before(div[@class='actions']/span[@class='date'], ' ')")
@@ -36,7 +53,5 @@ class Bash_random (read.Read):
 
 		return {randomId: q_data[randomId]}
 
-	def __checkTime(self, lastPost):
-		if (datetime.datetime.now() - lastPost) > datetime.timedelta(minutes = self.postPause):
-			return True
-		return False
+	def __postCheck(self, quotes):
+		return Base.checkPostsList(quotes, self.__class__.__name__)

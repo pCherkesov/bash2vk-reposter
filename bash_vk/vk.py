@@ -2,111 +2,111 @@
 # -*- coding: UTF-8 -*-
 
 import os
-import sys
 import time
 import vk_api
 import datetime
 import requests
+
+from bash_vk.log import Log
+from bash_vk.config import Config
 
 class Vk:
 	api = False
 	session = False
 	owner_id = ""
 	group_id = ""
-	from_group = 1
 
 	postTime = 0
-	postPause = 10
+	postPause = 0
 	postCount = {'from_group': 0, "from_user": 0}
 
-	def __init__(self, token, group_id, from_group = 1, pause = 10):
-		self.session = vk_api.VkApi(token = token, api_version = "5.73")
-		self.api = self.session.get_api()
+	@staticmethod
+	def init(pause = 10):
+		if Vk.api == False:
+			Vk.session = vk_api.VkApi(token = Config.getCfg('vk-api', 'token'), api_version = "5.73")
+			Vk.api = Vk.session.get_api()
 
-		self.postPause = pause
-		self.group_id = str(group_id)
-		self.owner_id = "-" + self.group_id
-		self.from_group = from_group
-		self.postTime = datetime.datetime.now()
+			Vk.postTime = datetime.datetime.now()
+			Vk.postPause = pause
+			Vk.group_id = str(Config.getCfg('vk-api', 'group_id'))
+			Vk.owner_id = "-" + Vk.group_id
 
+	@staticmethod
 	def getLastPost(self):
 		return self.postTime
 
-	def post(self, msg, attachment = False):
-		if (datetime.datetime.now() - self.postTime) > datetime.timedelta(seconds = self.postPause):
-			time.sleep(self.postPause)
+	@staticmethod
+	def post(msg, from_group, attachment = False):
+		if (datetime.datetime.now() - Vk.postTime) > datetime.timedelta(seconds = Vk.postPause):
+			time.sleep(Vk.postPause)
 
 		if False != attachment:
-			attachment = self._upload(attachment)
+			attachment = Vk._upload(attachment)
 
 		try:
-			return self.api.wall.post(owner_id = self.owner_id, from_group = self.from_group, message = msg, attachments = attachment)['post_id']
+			return Vk.api.wall.post(owner_id = Vk.owner_id, from_group = from_group, message = msg, attachments = attachment)['post_id']
+
 		except requests.exceptions.ConnectionError, error:
-			self.__errorMsg(error)
+			Log.log(error)
 			return False
 		except vk_api.exceptions.ApiError, error:
-			self.__errorMsg(error)
+			Log.log(error)
 			return False
 		except KeyError:
+			Log.log("")
 			return False
 
-	def _upload(self, url):
+	@staticmethod
+	def _upload(url):
 		filename = "upload/" + url.split("/")[-1]
 
 		try:
 			if "http" in url:
-				r = requests.get(url, stream=True)
+				r = requests.get(url, stream = True)
 				if r.status_code == 200:
 					with open(filename, 'wb') as f:
 						for chunk in r.iter_content(1024):
 							f.write(chunk)
 
-			upload = vk_api.VkUpload(self.session)
-			photo = upload.photo_wall(filename, group_id = self.group_id)
+			upload = vk_api.VkUpload(Vk.session)
+			photo = upload.photo_wall(filename, group_id = Vk.group_id)
 		except requests.exceptions.ConnectionError, error:
-			self.__errorMsg(error)
-			return {}
+			Log.log(error)
+			return False
 		except vk_api.exceptions.ApiError, error:
-			self.__errorMsg(error)
-			return {}
+			Log.log(error)
+			return False
 
 		os.remove(filename)
 
 		return 'photo{}_{}'.format(photo[0]['owner_id'], photo[0]['id'])
-
-	def getWall(self, count, filters):
+	@staticmethod
+	def getWall(count, filters):
 		try:
-			return self.api.wall.get(owner_id = self.owner_id, count = count, filter = filters)
+			return Vk.api.wall.get(owner_id = Vk.owner_id, count = count, filter = filters)['items']
 		except requests.exceptions.ConnectionError, error:
-			self.__errorMsg(error)
-			return {}
+			Log.log(error)
 		except vk_api.exceptions.ApiError, error:
-			self.__errorMsg(error)
-			return {}
+			Log.log(error)
 
-	def delWall(self, post_id):
+	@staticmethod
+	def delWall(post_id):
 		try:
-			self.api.wall.delete(owner_id = self.owner_id, post_id = post_id)
-			return "OK"
+			Vk.api.wall.delete(owner_id = Vk.owner_id, post_id = post_id)
+			return True
 		except requests.exceptions.ConnectionError, error:
-			self.__errorMsg(error)
-			return False
+			Log.log(error)
 		except vk_api.exceptions.ApiError, error:
-			self.__errorMsg(error)
-			return False
+			Log.log(error)
 
-	def banUser(self, user_id, ban_time, reason):
+	@staticmethod
+	def banUser(user_id, ban_time, reason):
 		end_time = datetime.timedelta(seconds = time.time() + ban_time).total_seconds()
 		try:
-			self.api.groups.banUser(group_id = self.group_id, user_id = user_id, end_date = end_time,
-											reason = 0, comment_visible = 1, comment = reason)
-			return "OK"
+			Vk.api.groups.banUser(group_id = Vk.group_id, user_id = user_id, end_date = end_time,
+									reason = 0, comment_visible = 1, comment = reason)
+			return True
 		except requests.exceptions.ConnectionError, error:
-			self.__errorMsg(error)
-			return False
+			Log.log(error)
 		except vk_api.exceptions.ApiError, error:
-			self.__errorMsg(error)
-			return False
-
-	def __errorMsg(self, msg):
-		sys.stdout.write("\r" + '{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now()) + " - " + str(msg) + "\n")
+			Log.log(error)
