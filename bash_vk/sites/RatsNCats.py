@@ -24,7 +24,11 @@ class RatsNCats (read.Read):
 		q_data = {}
 		tree = self._get('http://acomics.ru/~rats-n-cats')
 
-		self.image = "https://acomics.ru/" + tree.xpath("//img[@id='mainImage']/@src")[0]
+		try:
+			self.image = "https://acomics.ru/" + tree.xpath("//img[@id='mainImage']/@src")[0]
+		except IndexError:
+			return {}
+
 		site, slash, filename = self.image.rpartition('/')
 
 		return {filename: self.tag('')}

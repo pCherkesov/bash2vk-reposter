@@ -40,7 +40,7 @@ class Bash_random(read.Read):
 		for block in quotes:
 			if (block.xpath("substring-after(header[@class='quote__header']/a[@class='quote__header_permalink'], '#')") != ""):
 				q_date = block.xpath(u"substring-before(header[@class='quote__header']/div[@class='quote__header_date'], ' в')").strip()
-				if int(q_date[6:10]) < int('{:%Y}'.format(datetime.datetime.now())) - 4:
+				if int(q_date[6:10]) < int('{:%Y}'.format(datetime.datetime.now())) - 10:
 					q_id.append(block.xpath("substring-after(header[@class='quote__header']/a[@class='quote__header_permalink'], '#')"))
 					q_text.append('\n'.join(block.xpath("div[@class='quote__body']/text()")).strip() + u"\n\n" + u"Цитата от " + q_date)
 

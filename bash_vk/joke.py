@@ -27,5 +27,5 @@ class Joke():
 			files = os.listdir("./jokes")
 			if files != []:
 				randomImg = random.choice(files)
-				shutil.move(r'./jokes/' + randomImg, r'./upload')
+				shutil.copy(r'./jokes/' + randomImg, r'./upload')
 				return randomImg

@@ -54,7 +54,8 @@ try:
 				if False != post:
 					Base.savePost(charter.__class__.__name__, charter.getType(), id)
 					Log.log(charter.__class__.__name__ + " add post: " + str(id) + " (vk id: " + str(post) + ")")
-					Joke.post(post)
+					if charter.post_type != "image":
+						Joke.post(post)
 
 			time.sleep(30)
 			Security.check()

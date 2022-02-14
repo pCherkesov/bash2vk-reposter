@@ -4,6 +4,7 @@
 import os
 import time
 import vk_api
+import random
 import datetime
 import requests
 
@@ -27,11 +28,11 @@ class Vk:
 	@staticmethod
 	def init(pause = 10):
 		if Vk.api == False and Vk.group_api == False:
-			if Config.getCfg('vk-api', 'token') is not "":
+			if Config.getCfg('vk-api', 'token') != "":
 				Vk.session = vk_api.VkApi(token = Config.getCfg('vk-api', 'token'), api_version = Vk.api_version)
 				Vk.api = Vk.session.get_api()
 
-			if Config.getCfg('vk-api', 'group_token') is not "":
+			if Config.getCfg('vk-api', 'group_token') != "":
 				Vk.group_session = vk_api.VkApi(token = Config.getCfg('vk-api', 'group_token'), api_version = Vk.api_version)
 				Vk.group_api = Vk.group_session.get_api()			
 
@@ -85,7 +86,9 @@ class Vk:
 
 	@staticmethod
 	def _upload(url):
-		filename = "upload/" + url.split("/")[-1]
+		fname = url.split("/")[-1]
+		fname = fname.split('?')[0]
+		filename = "upload/" + fname
 
 		try:
 			if "http" in url:
@@ -116,6 +119,8 @@ class Vk:
 			Log.log(error)
 		except vk_api.exceptions.ApiError as error:
 			Log.log(error)
+		except vk_api.exceptions.ApiHttpError as error:
+			Log.log(error)
 
 		return {}
 
@@ -131,13 +136,16 @@ class Vk:
 
 	@staticmethod
 	def getMessages(chat_id, rev = 1, count = 1, offset = 0):
-		if rev == 1:
-			offset = offset + 1
+		# if rev == 1:
+		# 	offset = offset + 1
 
 		try:
 			messages = Vk.group_api.messages.getHistory(user_id = chat_id, group_id = Vk.group_id, offset = offset, rev = rev, count = count)
 
-			if len(messages) > 0 and 'count' in messages and messages['count'] > 0:
+			if 'count' in messages and messages['count'] > 0:
+				if messages['items'] == []:
+					return False
+					
 				return messages['items'][0]
 			else:
 				return False
@@ -147,6 +155,18 @@ class Vk:
 			return False
 		except vk_api.exceptions.ApiError as error:
 			Log.log("VK.getMessages: " + str(error))
+			return False
+
+	@staticmethod
+	def postMessages(chat_id, msg):
+		try:
+			messages = Vk.group_api.messages.send(peer_id = chat_id, message = msg, random_id = random.randint(1000000, 1000000000))
+
+		except requests.exceptions.ConnectionError as error:
+			Log.log(error)
+			return False
+		except vk_api.exceptions.ApiError as error:
+			Log.log("VK.postMessages: " + str(error))
 			return False
 
 

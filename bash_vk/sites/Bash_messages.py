@@ -29,7 +29,10 @@ class Bash_messages(read.Read):
 
 		return self.__postCheck(read)
 
-	def __preCheck(self):
+	def __preCheck(self):	
+		if Log.getWeekday() == 5:
+			return False
+
 		for post in Vk.getWall(15, 'owner'):
 			if "attachments" in post:
 				if (datetime.datetime.now() - datetime.timedelta(minutes=240)) < datetime.datetime.fromtimestamp(post["date"]):
@@ -44,12 +47,16 @@ class Bash_messages(read.Read):
 		if item is not False:
 			if item['attachments'] == [] and item['fwd_messages'] == []:
 				Vk.delMessage(item['id'], for_all = 0)
-				Log.log("Message #" + str(item['id']) + " in #" + str(self.chat_id) + " chat not forward - deleted")
+				Log.log("Message #" + str(item['id']) + " in #" + str(randomChat) + " chat not forward - deleted")
 				return {}
 
 			if item['attachments'] != []:
-				self.image = item['attachments'][0]['photo']['sizes'][-1]['url']
-				tag = u""
+				try:
+					self.image = item['attachments'][0]['photo']['sizes'][-1]['url']
+					tag = u""
+				except KeyError as error:
+					Log.log(item)
+					return {}
 
 			if item['fwd_messages'] != []:
 				self.image = item['fwd_messages'][0]['attachments'][0]['photo']['sizes'][-1]['url']

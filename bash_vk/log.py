@@ -29,3 +29,7 @@ class Log:
 	@staticmethod
 	def getDateTime():
 		return datetime.datetime.now()
+
+	@staticmethod
+	def getWeekday():
+		return datetime.datetime.now().isoweekday()

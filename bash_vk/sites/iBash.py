@@ -31,10 +31,13 @@ class iBash (read.Read):
 	def __read(self):
 		tree = self._get('http://ibash.org.ru/random.php')
 
-		q_id = tree.xpath("substring-after(//div[@class='quothead']/span/a/b, '#')")
-		q_text = '\n'.join(tree.xpath("//div[@class='quotbody']/text()"))
-		q_date = tree.xpath("//div[@class='quinfo']/span/text()")[1].split(" ")[2]
-		q_text = q_text + u"\n\n" + u"Цитата от " + q_date
+		try:
+			q_id = tree.xpath("substring-after(//div[@class='quothead']/span/a/b, '#')")
+			q_text = '\n'.join(tree.xpath("//div[@class='quotbody']/text()"))
+			q_date = tree.xpath("//div[@class='quinfo']/span/text()")[1].split(" ")[2]
+			q_text = q_text + u"\n\n" + u"Цитата от " + q_date
+		except IndexError:
+			return {}
 
 		return {q_id: self.tag(q_text)}
 
